@@ -51,7 +51,7 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       - name: Upload to slack step
-      - uses: MeilCli/slack-upload-file@v3
+        uses: MeilCli/slack-upload-file@v3
         with:
           slack_token: ${{ secrets.SLACK_BOT_TOKEN }}
           channel_id: "C031QN1AZAQ"
