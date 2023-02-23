@@ -38,15 +38,6 @@ jobs:
           name: release-apk
           path: build/app/outputs/apk/release/app-release.apk
 
-      - id: file_changes
-        uses: trilom/file-changes-action@v1.2.3
-        with:
-          output: ","
-          fileOutput: ","
-      - name: test
-        run: |
-          cat $HOME/files.csv
-
       - name: Post to a Slack channel
         id: slack
         uses: slackapi/slack-github-action@v1.23.0
@@ -66,3 +57,19 @@ jobs:
           channel_id: "C031QN1AZAQ"
           file_path: "build/app/outputs/apk/release/app-release.apk"
           initial_comment: "release file"
+
+      - name: Read readme
+        id: package
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: ./README.md
+      - name: Echo readme
+        run: echo "${{ steps.package.outputs.content }}"
+
+      - name: Upload to slack step
+        uses: MeilCli/slack-upload-file@v3
+        with:
+          slack_token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel_id: "C031QN1AZAQ"
+          file_path: "./README.md"
+          initial_comment: "readme"
