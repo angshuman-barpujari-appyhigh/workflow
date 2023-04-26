@@ -1,19 +1,26 @@
-name: Flutter Workflow (development)
+name: Flutter Workflow
 
 on:
   push:
-    branches: ["development"]
-  pull_request:
-    branches: ["development"]
+    branches: ["main"]
 
   workflow_dispatch:
 
 jobs:
   build:
+    # if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      # - name: Add ssh key for ai module
+      #   uses: webfactory/ssh-agent@v0.7.0
+      #   with:
+      #     ssh-private-key: |
+      #       ${{ secrets.WORKFLOW_PRIVATE_SSH_KEY }}
+      #       ${{ secrets.WORKFLOW_PRIVATE_SSH_KEY_CROPPER }}
+      #       ${{ secrets.WORKFLOW_PRIVATE_SSH_KEY_IMAGE_REJECTION }}
 
       - name: Install java
         uses: actions/setup-java@v3
@@ -21,19 +28,62 @@ jobs:
           distribution: "zulu"
           java-version: "12.x"
 
+      - name: get flutter version
+        id: json_properties
+        uses: zoexx/github-action-json-file-properties@release
+        with:
+          file_path: ".fvm/fvm_config.json"
+
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.7.3"
+          flutter-version: echo ${{steps.json_properties.outputs.flutterSdkVersion}}
           channel: "stable"
+
+      # - name: Install NDK
+      #   run: echo "y" | sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install 'ndk;21.1.6352462'
+
+      # - name: set debug = false
+      #   run: |
+      #     cd lib
+      #     touch env.dart
+      #     echo "import 'env.prod.dart' as env;const config = env.config;" > env.dart
+      #     cat env.dart
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Start release build
-        run: flutter build apk --release
+        run: flutter build apk --release --flavor art-generator
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
           name: release-apk
-          path: build/app/outputs/apk/release/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      # - name: Post to a Slack channel
+      #   id: slack
+      #   uses: slackapi/slack-github-action@v1.23.0
+      #   with:
+      #     # Slack channel id, channel name, or user id to post message.
+      #     # See also: https://api.slack.com/methods/chat.postMessage#channels
+      #     # You can pass in multiple channels to post to by providing a comma-delimited list of channel IDs.
+      #     channel-id: ${{ vars.CHANNEL_ID }}
+      #     # For posting a simple plain text message
+      #     slack-message: "GitHub build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+      #   env:
+      #     SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      # - name: Upload to slack step - apk
+      #   uses: MeilCli/slack-upload-file@v3
+      #   with:
+      #     slack_token: ${{ secrets.SLACK_BOT_TOKEN }}
+      #     channel_id: ${{ vars.CHANNEL_ID }}
+      #     file_path: "build/app/outputs/flutter-apk/app-release.apk"
+      #     initial_comment: "release file (main)"
+      # - name: Upload to slack step - change log
+      #   uses: MeilCli/slack-upload-file@v3
+      #   with:
+      #     slack_token: ${{ secrets.SLACK_BOT_TOKEN }}
+      #     channel_id: ${{ vars.CHANNEL_ID }}
+      #     file_path: "./index.md"
+      #     initial_comment: "change log file"
