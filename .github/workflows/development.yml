@@ -37,7 +37,7 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: echo ${{steps.json_properties.outputs.flutterSdkVersion}}
+          flutter-version: ${{steps.json_properties.outputs.flutterSdkVersion}}
           channel: "stable"
 
       # - name: Install NDK
